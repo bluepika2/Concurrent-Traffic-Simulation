@@ -67,25 +67,27 @@ void TrafficLight::cycleThroughPhases()
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
     std::chrono::time_point<std::chrono::system_clock> lastUpdate;
+    std::random_device rd;
+    std::mt19937 eng(rd());
+    std::uniform_real_distribution<> distr(4000, 6000);
+    double cycleDuration = distr(eng);
     lastUpdate = std::chrono::system_clock::now();
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         long timeSinceLastUpdate = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - lastUpdate).count();
-        std::random_device rd;
-        std::mt19937 eng(rd());
-        std::uniform_int_distribution<> distr(4, 6);
-        int cycleDuration = distr(eng);
-        if(timeSinceLastUpdate >= cycleDuration*1000) {
-            TrafficLightPhase phase;
+        
+        if(timeSinceLastUpdate >= cycleDuration) {
+            
             if(getCurrentPhase() == TrafficLightPhase::red) {
-                phase = TrafficLightPhase::green;
+                _currentPhase = TrafficLightPhase::green;
             }
             else if(getCurrentPhase() == TrafficLightPhase::green) {
-                phase = TrafficLightPhase::red;
+                _currentPhase = TrafficLightPhase::red;
             }
-            _currentPhase = phase;
-            _messageQueue.send(std::move(phase));
+            
+            _messageQueue.send(std::move(_currentPhase));
             lastUpdate = std::chrono::system_clock::now();
+            cycleDuration = distr(eng);
         }
     }
 }
